@@ -1,6 +1,6 @@
 import { UniqueEntityId } from "./unique-entity-id";
 
-export class Entity<T> {
+export abstract class Entity<T> {
   private readonly _id: UniqueEntityId;
   protected props: T;
 
@@ -11,5 +11,17 @@ export class Entity<T> {
 
   get id(): UniqueEntityId {
     return this._id;
+  }
+
+  public equals(entity: Entity<any>): boolean {
+    if (entity === this) {
+      return true;
+    }
+
+    if (entity.id === this._id) {
+      return true;
+    }
+
+    return false;
   }
 }

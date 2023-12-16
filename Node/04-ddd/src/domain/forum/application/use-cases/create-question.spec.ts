@@ -1,23 +1,42 @@
+import { UniqueEntityId } from "@/core/entities/unique-entity-id";
 import { CreateQuestionUseCase } from "./create-question";
 import { InMemoryQuestionsRepository } from "test/repositories/in-memory-questions-repository";
+import { InMemoryQuestionAttachmentsRepository } from "test/repositories/in-memory-question-attachments-repository";
 
-let inMemoryQuestionRepository: InMemoryQuestionsRepository;
+let inMemoryQuestionsRepository: InMemoryQuestionsRepository;
+let inMemoryQuestionAttachmentsRepository: InMemoryQuestionAttachmentsRepository;
 let sut: CreateQuestionUseCase;
 
 describe("Create Question", () => {
   beforeEach(() => {
-    inMemoryQuestionRepository = new InMemoryQuestionsRepository();
-    sut = new CreateQuestionUseCase(inMemoryQuestionRepository);
+    inMemoryQuestionAttachmentsRepository =
+      new InMemoryQuestionAttachmentsRepository();
+    inMemoryQuestionsRepository = new InMemoryQuestionsRepository(
+      inMemoryQuestionAttachmentsRepository,
+    );
+    sut = new CreateQuestionUseCase(inMemoryQuestionsRepository);
   });
 
   it("Should be able to create a question", async () => {
-    const { question } = await sut.execute({
-      title: "Nova pergunta",
+    const result = await sut.execute({
       authorId: "1",
-      content: "Novo conteúdo da pergunta",
+      title: "Nova pergunta",
+      content: "Conteúdo da pergunta",
+      attachmentIds: ["1", "2"],
     });
 
-    expect(question.id).toBeTruthy();
-    expect(inMemoryQuestionRepository.items[0].id).toEqual(question.id);
+    expect(result.isRight()).toBe(true);
+    expect(inMemoryQuestionsRepository.items[0]).toEqual(
+      result.value?.question,
+    );
+    expect(
+      inMemoryQuestionsRepository.items[0].attachments.currentItems,
+    ).toHaveLength(2);
+    expect(
+      inMemoryQuestionsRepository.items[0].attachments.currentItems,
+    ).toEqual([
+      expect.objectContaining({ attachmentId: new UniqueEntityId("1") }),
+      expect.objectContaining({ attachmentId: new UniqueEntityId("2") }),
+    ]);
   });
 });

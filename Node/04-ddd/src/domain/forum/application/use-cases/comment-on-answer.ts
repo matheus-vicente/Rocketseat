@@ -1,7 +1,10 @@
+import { type Either, left, right } from "@/core/either";
+import { NotAllowedError } from "@/core/errors/errors/not-allowed-error";
 import { UniqueEntityId } from "@/core/entities/unique-entity-id";
 import { AnswerComment } from "../../enterprise/entities/answer-comment";
-import { type AnswerCommentsRepository } from "../repositories/answer-comments-repository";
+import { ResourceNotFoundError } from "@/core/errors/errors/resource-not-found-error";
 import { type AnswersRepository } from "../repositories/answers-repository";
+import { type AnswerCommentsRepository } from "../repositories/answer-comments-repository";
 
 interface CommentOnAnswerUseCaseRequest {
   content: string;
@@ -9,15 +12,18 @@ interface CommentOnAnswerUseCaseRequest {
   answerId: string;
 }
 
-interface CommentOnAnswerUseCaseResponse {
-  answerComment: AnswerComment;
-}
+type CommentOnAnswerUseCaseResponse = Either<
+  ResourceNotFoundError | NotAllowedError,
+  {
+    answerComment: AnswerComment;
+  }
+>;
 
 export class CommentOnAnswerUseCase {
   constructor(
     private readonly answersRepository: AnswersRepository,
     private readonly answerCommentsRepository: AnswerCommentsRepository,
-  ) { } // eslint-disable-line
+  ) {}
 
   async execute({
     content,
@@ -27,11 +33,11 @@ export class CommentOnAnswerUseCase {
     const answer = await this.answersRepository.findById(answerId);
 
     if (!answer) {
-      throw new Error("Answer not found.");
+      return left(new NotAllowedError());
     }
 
     if (answer.authorId.toString() !== authorId) {
-      throw new Error("Not allowed.");
+      return left(new ResourceNotFoundError());
     }
 
     const answerComment = AnswerComment.create({
@@ -42,8 +48,8 @@ export class CommentOnAnswerUseCase {
 
     await this.answerCommentsRepository.create(answerComment);
 
-    return {
+    return right({
       answerComment,
-    };
+    });
   }
 }

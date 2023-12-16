@@ -1,3 +1,4 @@
+import { type Either, right } from "@/core/either";
 import { type Answer } from "../../enterprise/entities/answer";
 import { type AnswersRepository } from "../repositories/answers-repository";
 
@@ -6,13 +7,10 @@ interface FetchQuestionAnswersUseCaseRequest {
   questionId: string;
 }
 
-interface FetchQuestionAnswersUseCaseResponse {
-  answers: Answer[];
-}
+type FetchQuestionAnswersUseCaseResponse = Either<null, { answers: Answer[] }>;
 
 export class FetchQuestionAnswersUseCase {
-  // eslint-disable-next-line
-  constructor(private readonly answersRepository: AnswersRepository) { }
+  constructor(private readonly answersRepository: AnswersRepository) {}
 
   async execute({
     page,
@@ -25,8 +23,8 @@ export class FetchQuestionAnswersUseCase {
       },
     );
 
-    return {
+    return right({
       answers,
-    };
+    });
   }
 }

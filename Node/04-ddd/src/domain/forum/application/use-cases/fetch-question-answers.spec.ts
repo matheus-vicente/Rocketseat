@@ -1,14 +1,20 @@
 import { makeAnswer } from "test/factories/make-answer";
+import { UniqueEntityId } from "@/core/entities/unique-entity-id";
 import { FetchQuestionAnswersUseCase } from "./fetch-question-answers";
 import { InMemoryAnswersRepository } from "test/repositories/in-memory-answers-repository";
-import { UniqueEntityId } from "@/core/entities/unique-entity-id";
+import { InMemoryAnswerAttachmentsRepository } from "test/repositories/in-memory-answer-attachments-repository";
 
+let inMemoryAnswerAttachmentsRepository: InMemoryAnswerAttachmentsRepository;
 let inMemoryAnswersRepository: InMemoryAnswersRepository;
 let sut: FetchQuestionAnswersUseCase;
 
-describe("Fetch Questions Answers", () => {
+describe("Fetch Question Answers", () => {
   beforeEach(() => {
-    inMemoryAnswersRepository = new InMemoryAnswersRepository();
+    inMemoryAnswerAttachmentsRepository =
+      new InMemoryAnswerAttachmentsRepository();
+    inMemoryAnswersRepository = new InMemoryAnswersRepository(
+      inMemoryAnswerAttachmentsRepository,
+    );
     sut = new FetchQuestionAnswersUseCase(inMemoryAnswersRepository);
   });
 
@@ -31,12 +37,12 @@ describe("Fetch Questions Answers", () => {
       }),
     );
 
-    const { answers } = await sut.execute({
-      page: 1,
+    const result = await sut.execute({
       questionId: "custom-question-id",
+      page: 1,
     });
 
-    expect(answers).toHaveLength(3);
+    expect(result.value?.answers).toHaveLength(3);
   });
 
   it("Should be able to fetch paginated recent question answers", async () => {
@@ -48,11 +54,11 @@ describe("Fetch Questions Answers", () => {
       );
     }
 
-    const { answers } = await sut.execute({
-      page: 2,
+    const result = await sut.execute({
       questionId: "custom-question-id",
+      page: 2,
     });
 
-    expect(answers).toHaveLength(2);
+    expect(result.value?.answers).toHaveLength(2);
   });
 });

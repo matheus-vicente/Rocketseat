@@ -1,26 +1,28 @@
 import { UniqueEntityId } from "@/core/entities/unique-entity-id";
 
+import { right, type Either } from "@/core/either";
 import { Answer } from "@/domain/forum/enterprise/entities/answer";
+import { AnswerAttachment } from "../../enterprise/entities/answer-attachment";
+import { AnswerAttachmentList } from "../../enterprise/entities/answer-attachment-list";
 import { type AnswersRepository } from "@/domain/forum/application/repositories/answers-repository";
 
 interface AnswerQuestionUseCaseRequest {
-  instructorId: string;
-  questionId: string;
   content: string;
+  questionId: string;
+  instructorId: string;
+  attachmentIds: string[];
 }
 
-interface AnswerQuestionUseCaseResponse {
-  answer: Answer;
-}
+type AnswerQuestionUseCaseResponse = Either<null, { answer: Answer }>;
 
 export class AnswerQuestionUseCase {
-  // eslint-disable-next-line
-  constructor(private readonly answersRepository: AnswersRepository) { }
+  constructor(private readonly answersRepository: AnswersRepository) {}
 
   async execute({
-    instructorId,
-    questionId,
     content,
+    questionId,
+    instructorId,
+    attachmentIds,
   }: AnswerQuestionUseCaseRequest): Promise<AnswerQuestionUseCaseResponse> {
     const answer = Answer.create({
       content,
@@ -28,8 +30,17 @@ export class AnswerQuestionUseCase {
       questionId: new UniqueEntityId(questionId),
     });
 
+    const answerAttachments = attachmentIds.map((attachmentId) => {
+      return AnswerAttachment.create({
+        attachmentId: new UniqueEntityId(attachmentId),
+        answerId: answer.id,
+      });
+    });
+
+    answer.attachments = new AnswerAttachmentList(answerAttachments);
+
     await this.answersRepository.create(answer);
 
-    return { answer };
+    return right({ answer });
   }
 }

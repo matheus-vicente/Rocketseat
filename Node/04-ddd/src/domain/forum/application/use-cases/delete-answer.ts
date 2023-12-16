@@ -1,16 +1,20 @@
+import { type Either, left, right } from "@/core/either";
+import { NotAllowedError } from "@/core/errors/errors/not-allowed-error";
 import { type AnswersRepository } from "../repositories/answers-repository";
+import { ResourceNotFoundError } from "@/core/errors/errors/resource-not-found-error";
 
 interface DeleteAnswerUseCaseRequest {
   authorId: string;
   answerId: string;
 }
 
-// eslint-disable-next-line
-interface DeleteAnswerUseCaseResponse { }
+type DeleteAnswerUseCaseResponse = Either<
+  NotAllowedError | ResourceNotFoundError,
+  Record<string, unknown>
+>;
 
 export class DeleteAnswerUseCase {
-  // eslint-disable-next-line
-  constructor(private readonly answersRepository: AnswersRepository) { }
+  constructor(private readonly answersRepository: AnswersRepository) {}
 
   async execute({
     authorId,
@@ -19,15 +23,15 @@ export class DeleteAnswerUseCase {
     const answer = await this.answersRepository.findById(answerId);
 
     if (!answer) {
-      throw new Error("Answer not found.");
+      return left(new ResourceNotFoundError());
     }
 
     if (authorId !== answer.authorId.toString()) {
-      throw new Error("Not allowed.");
+      return left(new NotAllowedError());
     }
 
     await this.answersRepository.delete(answer);
 
-    return {};
+    return right({});
   }
 }
